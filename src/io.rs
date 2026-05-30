@@ -1,9 +1,9 @@
-use std::io::{Read, Result, Write};
+use std::io::{Read, Result as IOResult, Write};
 
 macro_rules! read_bytes_method {
 	($method:ident, $out:ty, $bytes:expr) => {
 		#[inline]
-		fn $method(&mut self) -> Result<$out> {
+		fn $method(&mut self) -> IOResult<$out> {
 			let mut buf = [0; $bytes];
 			self.read_exact(&mut buf)?;
 			Ok(<$out>::from_le_bytes(buf))
@@ -14,7 +14,7 @@ macro_rules! read_bytes_method {
 macro_rules! write_bytes_method {
 	($method:ident, $out:ty) => {
 		#[inline]
-		fn $method(&mut self, n: $out) -> Result<()> {
+		fn $method(&mut self, n: $out) -> IOResult<()> {
 			self.write_all(&n.to_le_bytes())
 		}
 	};
