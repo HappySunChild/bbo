@@ -153,16 +153,20 @@ pub trait WriteBytesSigned: WriteBytes {
 	}
 }
 pub trait WriteBytesFloat: WriteBytes {
+	#[inline]
 	fn write_f32_le(&mut self, n: f32) -> IOResult<()> {
 		self.write_u32_le(n.to_bits())
 	}
+	#[inline]
 	fn write_f32_be(&mut self, n: f32) -> IOResult<()> {
 		self.write_u32_be(n.to_bits())
 	}
 
+	#[inline]
 	fn write_f64_le(&mut self, n: f64) -> IOResult<()> {
 		self.write_u64_le(n.to_bits())
 	}
+	#[inline]
 	fn write_f64_be(&mut self, n: f64) -> IOResult<()> {
 		self.write_u64_be(n.to_bits())
 	}
