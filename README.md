@@ -7,13 +7,13 @@ Here is a simple example of writing little endian encoded bytes to a file, using
 use bbo::ext::WriteBytesExt;
 
 fn main() -> std::io::Result<()> {
-	let f = File::create("example.txt")?;
-	let mut buf = BufWriter::new(f);
-	
+	let f = std::fs::File::create("example.txt")?;
+	let mut buf = std::io::BufWriter::new(f);
+
 	buf.write_u8(31_u8)?;
 	buf.write_i16_le(31415_i16)?;
 	buf.write_f64_le(3.134159_f64)?;
-	
+
 	Ok(())
 }
 ```
