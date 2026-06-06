@@ -19,4 +19,4 @@ fn main() -> std::io::Result<()> {
 ```
 
 > [!NOTE]
-> This crate has traits that automatically implement methods for any objects that implement the `std::io::Read` and `std::io::Write` traits, namely the `WriteBytesExt` and `ReadBytesExt` traits respectively.
+> This crate has traits that automatically implement methods for any objects that implement the `std::io::Read` and `std::io::Write` traits, namely the `ReadBytesExt` and `WriteBytesExt` traits respectively.
