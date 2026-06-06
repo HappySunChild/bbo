@@ -1,182 +1,276 @@
-use std::io::Result as IOResult;
+pub mod little {
+	macro_rules! fn_read_bytes_le {
+		($name:ident, $out:ty, $bytes:expr) => {
+			#[inline]
+			pub fn $name(buf: &[u8]) -> $out {
+				<$out>::from_le_bytes(buf[..$bytes].try_into().unwrap())
+			}
+		};
+	}
+	macro_rules! fn_write_bytes_le {
+		($name:ident, $in:ty, $bytes:expr) => {
+			#[inline]
+			pub fn $name(buf: &mut [u8], n: $in) {
+				buf[..$bytes].copy_from_slice(&n.to_le_bytes());
+			}
+		};
+	}
 
-pub trait ReadBytes {
-	fn read_u8(&mut self) -> IOResult<u8>;
-	fn read_u16_le(&mut self) -> IOResult<u16>;
-	fn read_u32_le(&mut self) -> IOResult<u32>;
-	fn read_u64_le(&mut self) -> IOResult<u64>;
-	fn read_u128_le(&mut self) -> IOResult<u128>;
+	fn_read_bytes_le!(read_u16, u16, 2);
+	fn_read_bytes_le!(read_u32, u32, 4);
+	fn_read_bytes_le!(read_u64, u64, 8);
+	fn_read_bytes_le!(read_u128, u128, 16);
+	#[inline]
+	pub fn read_uint64(buf: &[u8], byte_count: usize) -> u64 {
+		assert!(byte_count <= 8);
+		assert!(byte_count <= buf.len());
+
+		let mut out = [0u8; 8];
+		out[..byte_count].copy_from_slice(&buf[..byte_count]);
+		u64::from_le_bytes(out)
+	}
+	#[inline]
+	pub fn read_uint128(buf: &[u8], byte_count: usize) -> u128 {
+		assert!(byte_count <= 16);
+		assert!(byte_count <= buf.len());
+
+		let mut out = [0u8; 16];
+		out[..byte_count].copy_from_slice(&buf[..byte_count]);
+		u128::from_le_bytes(out)
+	}
+
+	fn_write_bytes_le!(write_u16, u16, 2);
+	fn_write_bytes_le!(write_u32, u32, 4);
+	fn_write_bytes_le!(write_u64, u64, 8);
+	fn_write_bytes_le!(write_u128, u128, 16);
+	#[inline]
+	pub fn write_uint64(buf: &mut [u8], n: u64, byte_count: usize) {
+		assert!(byte_count <= 8);
+		assert!(byte_count <= buf.len());
+
+		buf[..byte_count].copy_from_slice(&n.to_le_bytes()[..byte_count]);
+	}
+	#[inline]
+	pub fn write_uint128(buf: &mut [u8], n: u128, byte_count: usize) {
+		assert!(byte_count <= 16);
+		assert!(byte_count <= buf.len());
+
+		buf[..byte_count].copy_from_slice(&n.to_le_bytes()[..byte_count]);
+	}
 
 	#[inline]
-	fn read_u16_be(&mut self) -> IOResult<u16> {
-		Ok(self.read_u16_le()?.swap_bytes())
+	pub fn read_i16(buf: &[u8]) -> i16 {
+		read_u16(buf) as i16
 	}
 	#[inline]
-	fn read_u32_be(&mut self) -> IOResult<u32> {
-		Ok(self.read_u32_le()?.swap_bytes())
+	pub fn read_i32(buf: &[u8]) -> i32 {
+		read_u32(buf) as i32
 	}
 	#[inline]
-	fn read_u64_be(&mut self) -> IOResult<u64> {
-		Ok(self.read_u64_le()?.swap_bytes())
+	pub fn read_i64(buf: &[u8]) -> i64 {
+		read_u64(buf) as i64
 	}
 	#[inline]
-	fn read_u128_be(&mut self) -> IOResult<u128> {
-		Ok(self.read_u128_le()?.swap_bytes())
+	pub fn read_i128(buf: &[u8]) -> i128 {
+		read_u128(buf) as i128
+	}
+	#[inline]
+	pub fn read_int64(buf: &[u8], byte_count: usize) -> i64 {
+		let unsigned = read_uint64(buf, byte_count);
+		let shift_by = 64 - byte_count * 8;
+		((unsigned << shift_by) as i64) >> shift_by
+	}
+	#[inline]
+	pub fn read_int128(buf: &[u8], byte_count: usize) -> i128 {
+		let unsigned = read_uint128(buf, byte_count);
+		let shift_by = 128 - byte_count * 8;
+		((unsigned << shift_by) as i128) >> shift_by
+	}
+
+	#[inline]
+	pub fn write_i16(buf: &mut [u8], n: i16) {
+		write_u16(buf, n as u16);
+	}
+	#[inline]
+	pub fn write_i32(buf: &mut [u8], n: i32) {
+		write_u32(buf, n as u32);
+	}
+	#[inline]
+	pub fn write_i64(buf: &mut [u8], n: i64) {
+		write_u64(buf, n as u64);
+	}
+	#[inline]
+	pub fn write_i128(buf: &mut [u8], n: i128) {
+		write_u128(buf, n as u128);
+	}
+	#[inline]
+	pub fn write_int64(buf: &mut [u8], n: i64, byte_count: usize) {
+		write_uint64(buf, n as u64, byte_count);
+	}
+	#[inline]
+	pub fn write_int128(buf: &mut [u8], n: i128, byte_count: usize) {
+		write_uint128(buf, n as u128, byte_count);
+	}
+
+	#[inline]
+	pub fn read_f32(buf: &[u8]) -> f32 {
+		f32::from_bits(read_u32(buf))
+	}
+	#[inline]
+	pub fn read_f64(buf: &[u8]) -> f64 {
+		f64::from_bits(read_u64(buf))
+	}
+
+	#[inline]
+	pub fn write_f32(buf: &mut [u8], n: f32) {
+		write_u32(buf, n.to_bits());
+	}
+	#[inline]
+	pub fn write_f64(buf: &mut [u8], n: f64) {
+		write_u64(buf, n.to_bits());
 	}
 }
-pub trait ReadBytesSigned: ReadBytes {
+pub mod big {
+	macro_rules! fn_read_bytes_be {
+		($name:ident, $out:ty, $bytes:expr) => {
+			#[inline]
+			pub fn $name(buf: &[u8]) -> $out {
+				<$out>::from_be_bytes(buf[..$bytes].try_into().unwrap())
+			}
+		};
+	}
+	macro_rules! fn_write_bytes_be {
+		($name:ident, $in:ty, $bytes:expr) => {
+			#[inline]
+			pub fn $name(buf: &mut [u8], n: $in) {
+				buf[..$bytes].copy_from_slice(&n.to_be_bytes());
+			}
+		};
+	}
+
+	fn_read_bytes_be!(read_u16, u16, 2);
+	fn_read_bytes_be!(read_u32, u32, 4);
+	fn_read_bytes_be!(read_u64, u64, 8);
+	fn_read_bytes_be!(read_u128, u128, 16);
 	#[inline]
-	fn read_i8(&mut self) -> IOResult<i8> {
-		Ok(self.read_u8()? as i8)
+	pub fn read_uint64(buf: &[u8], byte_count: usize) -> u64 {
+		let mut out = [0u8; 8];
+		out[8 - byte_count..].copy_from_slice(&buf[..byte_count]);
+		u64::from_be_bytes(out)
+	}
+	#[inline]
+	pub fn read_uint128(buf: &[u8], byte_count: usize) -> u128 {
+		let mut out = [0u8; 16];
+		out[16 - byte_count..].copy_from_slice(&buf[..byte_count]);
+		u128::from_be_bytes(out)
+	}
+
+	fn_write_bytes_be!(write_u16, u16, 2);
+	fn_write_bytes_be!(write_u32, u32, 4);
+	fn_write_bytes_be!(write_u64, u64, 8);
+	fn_write_bytes_be!(write_u128, u128, 16);
+	#[inline]
+	pub fn write_uint64(buf: &mut [u8], n: u64, byte_count: usize) {
+		assert!(byte_count <= 8);
+		assert!(byte_count <= buf.len());
+
+		buf[..byte_count].copy_from_slice(&n.to_be_bytes()[8 - byte_count..]);
+	}
+	#[inline]
+	pub fn write_uint128(buf: &mut [u8], n: u128, byte_count: usize) {
+		assert!(byte_count <= 16);
+		assert!(byte_count <= buf.len());
+
+		buf[..byte_count].copy_from_slice(&n.to_be_bytes()[16 - byte_count..]);
 	}
 
 	#[inline]
-	fn read_i16_le(&mut self) -> IOResult<i16> {
-		Ok(self.read_u16_le()? as i16)
+	pub fn read_i16(buf: &[u8]) -> i16 {
+		read_u16(buf) as i16
 	}
 	#[inline]
-	fn read_i16_be(&mut self) -> IOResult<i16> {
-		Ok(self.read_u16_be()? as i16)
-	}
-
-	#[inline]
-	fn read_i32_le(&mut self) -> IOResult<i32> {
-		Ok(self.read_u32_le()? as i32)
+	pub fn read_i32(buf: &[u8]) -> i32 {
+		read_u32(buf) as i32
 	}
 	#[inline]
-	fn read_i32_be(&mut self) -> IOResult<i32> {
-		Ok(self.read_u32_be()? as i32)
-	}
-
-	#[inline]
-	fn read_i64_le(&mut self) -> IOResult<i64> {
-		Ok(self.read_u64_le()? as i64)
+	pub fn read_i64(buf: &[u8]) -> i64 {
+		read_u64(buf) as i64
 	}
 	#[inline]
-	fn read_i64_be(&mut self) -> IOResult<i64> {
-		Ok(self.read_u64_be()? as i64)
-	}
-
-	#[inline]
-	fn read_i128_le(&mut self) -> IOResult<i128> {
-		Ok(self.read_u128_le()? as i128)
+	pub fn read_i128(buf: &[u8]) -> i128 {
+		read_u128(buf) as i128
 	}
 	#[inline]
-	fn read_i128_be(&mut self) -> IOResult<i128> {
-		Ok(self.read_u128_be()? as i128)
-	}
-}
-pub trait ReadBytesFloat: ReadBytes {
-	#[inline]
-	fn read_f32_le(&mut self) -> IOResult<f32> {
-		Ok(f32::from_bits(self.read_u32_le()?))
+	pub fn read_int64(buf: &[u8], byte_count: usize) -> i64 {
+		let unsigned = read_uint64(buf, byte_count);
+		let shift_by = 64 - byte_count * 8;
+		((unsigned << shift_by) as i64) >> shift_by
 	}
 	#[inline]
-	fn read_f32_be(&mut self) -> IOResult<f32> {
-		Ok(f32::from_bits(self.read_u32_be()?))
+	pub fn read_int128(buf: &[u8], byte_count: usize) -> i128 {
+		let unsigned = read_uint128(buf, byte_count);
+		let shift_by = 128 - byte_count * 8;
+		((unsigned << shift_by) as i128) >> shift_by
 	}
 
 	#[inline]
-	fn read_f64_le(&mut self) -> IOResult<f64> {
-		Ok(f64::from_bits(self.read_u64_le()?))
+	pub fn write_i16(buf: &mut [u8], n: i16) {
+		write_u16(buf, n as u16);
 	}
 	#[inline]
-	fn read_f64_be(&mut self) -> IOResult<f64> {
-		Ok(f64::from_bits(self.read_u64_be()?))
-	}
-}
-
-pub trait WriteBytes {
-	fn write_u8(&mut self, n: u8) -> IOResult<()>;
-	fn write_u16_le(&mut self, n: u16) -> IOResult<()>;
-	fn write_u32_le(&mut self, n: u32) -> IOResult<()>;
-	fn write_u64_le(&mut self, n: u64) -> IOResult<()>;
-	fn write_u128_le(&mut self, n: u128) -> IOResult<()>;
-
-	#[inline]
-	fn write_u16_be(&mut self, n: u16) -> IOResult<()> {
-		self.write_u16_le(n.swap_bytes())
+	pub fn write_i32(buf: &mut [u8], n: i32) {
+		write_u32(buf, n as u32);
 	}
 	#[inline]
-	fn write_u32_be(&mut self, n: u32) -> IOResult<()> {
-		self.write_u32_le(n.swap_bytes())
+	pub fn write_i64(buf: &mut [u8], n: i64) {
+		write_u64(buf, n as u64);
 	}
 	#[inline]
-	fn write_u64_be(&mut self, n: u64) -> IOResult<()> {
-		self.write_u64_le(n.swap_bytes())
+	pub fn write_i128(buf: &mut [u8], n: i128) {
+		write_u128(buf, n as u128);
 	}
 	#[inline]
-	fn write_u128_be(&mut self, n: u128) -> IOResult<()> {
-		self.write_u128_le(n.swap_bytes())
+	pub fn write_int64(buf: &mut [u8], n: i64, byte_count: usize) {
+		write_uint64(buf, n as u64, byte_count);
 	}
-}
-pub trait WriteBytesSigned: WriteBytes {
 	#[inline]
-	fn write_i8(&mut self, n: i8) -> IOResult<()> {
-		self.write_u8(n as u8)
+	pub fn write_int128(buf: &mut [u8], n: i128, byte_count: usize) {
+		write_uint128(buf, n as u128, byte_count);
 	}
 
 	#[inline]
-	fn write_i16_le(&mut self, n: i16) -> IOResult<()> {
-		self.write_u16_le(n as u16)
+	pub fn read_f32(buf: &[u8]) -> f32 {
+		f32::from_bits(read_u32(buf))
 	}
 	#[inline]
-	fn write_i16_be(&mut self, n: i16) -> IOResult<()> {
-		self.write_u16_be(n as u16)
-	}
-
-	#[inline]
-	fn write_i32_le(&mut self, n: i32) -> IOResult<()> {
-		self.write_u32_le(n as u32)
-	}
-	#[inline]
-	fn write_i32_be(&mut self, n: i32) -> IOResult<()> {
-		self.write_u32_be(n as u32)
+	pub fn read_f64(buf: &[u8]) -> f64 {
+		f64::from_bits(read_u64(buf))
 	}
 
 	#[inline]
-	fn write_i64_le(&mut self, n: i64) -> IOResult<()> {
-		self.write_u64_le(n as u64)
+	pub fn write_f32(buf: &mut [u8], n: f32) {
+		write_u32(buf, n.to_bits());
 	}
 	#[inline]
-	fn write_i64_be(&mut self, n: i64) -> IOResult<()> {
-		self.write_u64_be(n as u64)
-	}
-
-	#[inline]
-	fn write_i128_le(&mut self, n: i128) -> IOResult<()> {
-		self.write_u128_le(n as u128)
-	}
-	#[inline]
-	fn write_i128_be(&mut self, n: i128) -> IOResult<()> {
-		self.write_u128_be(n as u128)
-	}
-}
-pub trait WriteBytesFloat: WriteBytes {
-	#[inline]
-	fn write_f32_le(&mut self, n: f32) -> IOResult<()> {
-		self.write_u32_le(n.to_bits())
-	}
-	#[inline]
-	fn write_f32_be(&mut self, n: f32) -> IOResult<()> {
-		self.write_u32_be(n.to_bits())
-	}
-
-	#[inline]
-	fn write_f64_le(&mut self, n: f64) -> IOResult<()> {
-		self.write_u64_le(n.to_bits())
-	}
-	#[inline]
-	fn write_f64_be(&mut self, n: f64) -> IOResult<()> {
-		self.write_u64_be(n.to_bits())
+	pub fn write_f64(buf: &mut [u8], n: f64) {
+		write_u64(buf, n.to_bits());
 	}
 }
 
-pub trait ReadBytesArch {
-	fn read_usize(&mut self) -> IOResult<usize>;
-	fn read_isize(&mut self) -> IOResult<isize>;
+#[inline]
+pub fn read_u8(buf: &[u8]) -> u8 {
+	buf[0]
 }
-pub trait WriteBytesArch {
-	fn write_usize(&mut self) -> IOResult<()>;
-	fn write_isize(&mut self) -> IOResult<()>;
+#[inline]
+pub fn write_u8(buf: &mut [u8], n: u8) {
+	buf[0] = n
+}
+
+#[inline]
+pub fn read_i8(buf: &[u8]) -> i8 {
+	buf[0] as i8
+}
+#[inline]
+pub fn write_i8(buf: &mut [u8], n: i8) {
+	buf[0] = n as u8
 }
