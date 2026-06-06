@@ -1,4 +1,4 @@
-pub mod runtime {
+pub mod endian {
 	use crate::buffer::{big, little, read_i8, read_u8, write_i8, write_u8};
 
 	macro_rules! fn_runtime_read {
