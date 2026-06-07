@@ -2,5 +2,8 @@
 name = "bbo"
 version = "0.1.0"
 edition = "2024"
+authors = ["Eli"]
+description = "A crate containing some useful traits for writing to and reading from buffers or streams more ergonomically."
+license = "Unlicense"
 
 [dependencies]
