@@ -1,9 +1,9 @@
-use crate::buffer::{big, little, read_i8, read_u8, write_i8, write_u8};
+use crate::buffer::{big, little};
 
 macro_rules! fn_runtime_read {
 	($func:ident, $out:ty) => {
 		#[inline]
-		pub fn $func(self, buf: &[u8]) -> $out {
+		fn $func(self, buf: &[u8]) -> $out {
 			match self {
 				Endianness::Little => little::$func(buf),
 				Endianness::Big => big::$func(buf),
@@ -14,7 +14,7 @@ macro_rules! fn_runtime_read {
 macro_rules! fn_runtime_read_count {
 	($func:ident, $out:ty) => {
 		#[inline]
-		pub fn $func(self, buf: &[u8], byte_count: usize) -> $out {
+		fn $func(self, buf: &[u8], byte_count: usize) -> $out {
 			match self {
 				Endianness::Little => little::$func(buf, byte_count),
 				Endianness::Big => big::$func(buf, byte_count),
@@ -26,7 +26,7 @@ macro_rules! fn_runtime_read_count {
 macro_rules! fn_runtime_write {
 	($func:ident, $out:ty) => {
 		#[inline]
-		pub fn $func(self, buf: &mut [u8], n: $out) {
+		fn $func(self, buf: &mut [u8], n: $out) {
 			match self {
 				Endianness::Little => little::$func(buf, n),
 				Endianness::Big => big::$func(buf, n),
@@ -37,7 +37,7 @@ macro_rules! fn_runtime_write {
 macro_rules! fn_runtime_write_count {
 	($func:ident, $out:ty) => {
 		#[inline]
-		pub fn $func(self, buf: &mut [u8], n: $out, byte_count: usize) {
+		fn $func(self, buf: &mut [u8], n: $out, byte_count: usize) {
 			match self {
 				Endianness::Little => little::$func(buf, n, byte_count),
 				Endianness::Big => big::$func(buf, n, byte_count),
@@ -58,10 +58,10 @@ pub enum Endianness {
 }
 
 impl Endianness {
-	#[inline]
-	pub fn read_u8(self, buf: &[u8]) -> u8 {
-		read_u8(buf)
-	}
+	// #[inline]
+	// fn read_u8(self, buf: &[u8]) -> u8 {
+	// 	read_u8(buf)
+	// }
 	fn_runtime_read!(read_u16, u16);
 	fn_runtime_read!(read_u32, u32);
 	fn_runtime_read!(read_u64, u64);
@@ -69,10 +69,10 @@ impl Endianness {
 	fn_runtime_read_count!(read_uint64, u64);
 	fn_runtime_read_count!(read_uint128, u128);
 
-	#[inline]
-	pub fn write_u8(self, buf: &mut [u8], n: u8) {
-		write_u8(buf, n);
-	}
+	// #[inline]
+	// fn write_u8(self, buf: &mut [u8], n: u8) {
+	// 	write_u8(buf, n);
+	// }
 	fn_runtime_write!(write_u16, u16);
 	fn_runtime_write!(write_u32, u32);
 	fn_runtime_write!(write_u64, u64);
@@ -80,10 +80,10 @@ impl Endianness {
 	fn_runtime_write_count!(write_uint64, u64);
 	fn_runtime_write_count!(write_uint128, u128);
 
-	#[inline]
-	pub fn read_i8(self, buf: &[u8]) -> i8 {
-		read_i8(buf)
-	}
+	// #[inline]
+	// fn read_i8(self, buf: &[u8]) -> i8 {
+	// 	read_i8(buf)
+	// }
 	fn_runtime_read!(read_i16, i16);
 	fn_runtime_read!(read_i32, i32);
 	fn_runtime_read!(read_i64, i64);
@@ -91,10 +91,10 @@ impl Endianness {
 	fn_runtime_read_count!(read_int64, i64);
 	fn_runtime_read_count!(read_int128, i128);
 
-	#[inline]
-	pub fn write_i8(self, buf: &mut [u8], n: i8) {
-		write_i8(buf, n);
-	}
+	// #[inline]
+	// fn write_i8(self, buf: &mut [u8], n: i8) {
+	// 	write_i8(buf, n);
+	// }
 	fn_runtime_write!(write_i16, i16);
 	fn_runtime_write!(write_i32, i32);
 	fn_runtime_write!(write_i64, i64);
@@ -124,7 +124,8 @@ pub mod ext {
 			($target:ident, $receiver:ident.$method:ident, $count:expr, $($args:expr),+) => {{
 				let mut buf = [0; $count];
 				$receiver.$method(&mut buf, $($args,)+);
-				$target.write_all(&buf)
+				$target.write_all(&buf)?;
+				Ok($target)
 			}};
 		}
 
@@ -207,75 +208,93 @@ pub mod ext {
 	pub trait WriteBytesRuntimeExt: Write {
 		/// Writes a [`u16`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_u16(&mut self, e: Endianness, n: u16) -> IoResult<()> {
+		fn write_u16(&mut self, e: Endianness, n: u16) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_u16, 2, n)
 		}
 		/// Writes a [`u32`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_u32(&mut self, e: Endianness, n: u32) -> IoResult<()> {
+		fn write_u32(&mut self, e: Endianness, n: u32) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_u32, 4, n)
 		}
 		/// Writes a [`u64`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_u64(&mut self, e: Endianness, n: u64) -> IoResult<()> {
+		fn write_u64(&mut self, e: Endianness, n: u64) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_u64, 8, n)
 		}
 		/// Writes a [`u128`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_u128(&mut self, e: Endianness, n: u128) -> IoResult<()> {
+		fn write_u128(&mut self, e: Endianness, n: u128) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_u128, 16, n)
 		}
 		/// Writes a unsigned n-bytes integer from the writer as a [`u64`] with the specified [`Endianness`].
 		#[inline]
-		fn write_uint64(&mut self, e: Endianness, n: u64, byte_count: usize) -> IoResult<()> {
+		fn write_uint64(
+			&mut self,
+			e: Endianness,
+			n: u64,
+			byte_count: usize,
+		) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_uint64, 8, n, byte_count)
 		}
 		/// Writes a unsigned n-bytes integer from the writer as a [`u128`] with the specified [`Endianness`].
 		#[inline]
-		fn write_uint128(&mut self, e: Endianness, n: u128, byte_count: usize) -> IoResult<()> {
+		fn write_uint128(
+			&mut self,
+			e: Endianness,
+			n: u128,
+			byte_count: usize,
+		) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_uint128, 16, n, byte_count)
 		}
 
 		/// Writes a [`i16`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_i16(&mut self, e: Endianness, n: i16) -> IoResult<()> {
+		fn write_i16(&mut self, e: Endianness, n: i16) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_i16, 2, n)
 		}
 		/// Writes a [`i32`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_i32(&mut self, e: Endianness, n: i32) -> IoResult<()> {
+		fn write_i32(&mut self, e: Endianness, n: i32) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_i32, 4, n)
 		}
 		/// Writes a [`i64`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_i64(&mut self, e: Endianness, n: i64) -> IoResult<()> {
+		fn write_i64(&mut self, e: Endianness, n: i64) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_i64, 8, n)
 		}
 		/// Writes a [`i128`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_i128(&mut self, e: Endianness, n: i128) -> IoResult<()> {
+		fn write_i128(&mut self, e: Endianness, n: i128) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_i128, 16, n)
 		}
 		/// Writes a unsigned n-bytes integer from the writer as a [`i64`] with the specified [`Endianness`].
 		#[inline]
-		fn write_int64(&mut self, e: Endianness, n: i64, byte_count: usize) -> IoResult<()> {
+		fn write_int64(&mut self, e: Endianness, n: i64, byte_count: usize) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_int64, 8, n, byte_count)
 		}
 		/// Writes a unsigned n-bytes integer from the writer as a [`i128`] with the specified [`Endianness`].
 		#[inline]
-		fn write_int128(&mut self, e: Endianness, n: i128, byte_count: usize) -> IoResult<()> {
+		fn write_int128(
+			&mut self,
+			e: Endianness,
+			n: i128,
+			byte_count: usize,
+		) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_int128, 8, n, byte_count)
 		}
 
 		/// Writes a [`f32`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_f32(&mut self, e: Endianness, n: f32) -> IoResult<()> {
+		fn write_f32(&mut self, e: Endianness, n: f32) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_f32, 4, n)
 		}
 		/// Writes a [`f64`] to the writer with the specified [`Endianness`].
 		#[inline]
-		fn write_f64(&mut self, e: Endianness, n: f64) -> IoResult<()> {
+		fn write_f64(&mut self, e: Endianness, n: f64) -> IoResult<&mut Self> {
 			write_bytes_to!(self, e.write_f64, 4, n)
 		}
 	}
+
+	impl<R: Read> ReadBytesRuntimeExt for R {}
+	impl<W: Write> WriteBytesRuntimeExt for W {}
 }
