@@ -12,7 +12,8 @@ macro_rules! write_bytes_to {
 	($target:ident, $method:expr, $count:expr, $($args:expr),+) => {{
 		let mut buf = [0; $count];
 		$method(&mut buf, $($args,)+);
-		$target.write_all(&buf)
+		$target.write_all(&buf)?;
+		Ok($target)
 	}};
 }
 
@@ -191,167 +192,167 @@ pub trait ReadBytesExt: Read {
 pub trait WriteBytesExt: Write {
 	/// Write a [`u8`] to the writer.
 	#[inline]
-	fn write_u8(&mut self, n: u8) -> IoResult<()> {
+	fn write_u8(&mut self, n: u8) -> IoResult<&mut Self> {
 		write_bytes_to!(self, write_u8, 1, n)
 	}
 
 	/// Writes a little-endian [`u16`] to the writer.
 	#[inline]
-	fn write_u16_le(&mut self, n: u16) -> IoResult<()> {
+	fn write_u16_le(&mut self, n: u16) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_u16, 2, n)
 	}
 	/// Writes a big-endian [`u16`] to the writer.
 	#[inline]
-	fn write_u16_be(&mut self, n: u16) -> IoResult<()> {
+	fn write_u16_be(&mut self, n: u16) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_u16, 2, n)
 	}
 
 	/// Writes a little-endian [`u32`] to the writer.
 	#[inline]
-	fn write_u32_le(&mut self, n: u32) -> IoResult<()> {
+	fn write_u32_le(&mut self, n: u32) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_u32, 4, n)
 	}
 	/// Writes a big-endian [`u32`] to the writer.
 	#[inline]
-	fn write_u32_be(&mut self, n: u32) -> IoResult<()> {
+	fn write_u32_be(&mut self, n: u32) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_u32, 4, n)
 	}
 
 	/// Writes a little-endian [`u64`] to the writer.
 	#[inline]
-	fn write_u64_le(&mut self, n: u64) -> IoResult<()> {
+	fn write_u64_le(&mut self, n: u64) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_u64, 8, n)
 	}
 	/// Writes a big-endian [`u64`] to the writer.
 	#[inline]
-	fn write_u64_be(&mut self, n: u64) -> IoResult<()> {
+	fn write_u64_be(&mut self, n: u64) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_u64, 8, n)
 	}
 
 	/// Writes a little-endian [`u128`] to the writer.
 	#[inline]
-	fn write_u128_le(&mut self, n: u128) -> IoResult<()> {
+	fn write_u128_le(&mut self, n: u128) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_u128, 16, n)
 	}
 	/// Writes a big-endian [`u128`] to the writer.
 	#[inline]
-	fn write_u128_be(&mut self, n: u128) -> IoResult<()> {
+	fn write_u128_be(&mut self, n: u128) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_u128, 16, n)
 	}
 
 	/// Writes a little-endian, unsigned n-byte integer as a [`u64`] to the writer.
 	#[inline]
-	fn write_uint64_le(&mut self, n: u64, byte_count: usize) -> IoResult<()> {
+	fn write_uint64_le(&mut self, n: u64, byte_count: usize) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_uint64, 8, n, byte_count)
 	}
 	/// Writes a big-endian, unsigned n-byte integer as a [`u64`] to the writer.
 	#[inline]
-	fn write_uint64_be(&mut self, n: u64, byte_count: usize) -> IoResult<()> {
+	fn write_uint64_be(&mut self, n: u64, byte_count: usize) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_uint64, 8, n, byte_count)
 	}
 
 	/// Writes a little-endian, unsigned n-byte integer as a [`u128`] to the writer.
 	#[inline]
-	fn write_uint128_le(&mut self, n: u128, byte_count: usize) -> IoResult<()> {
+	fn write_uint128_le(&mut self, n: u128, byte_count: usize) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_uint128, 16, n, byte_count)
 	}
 	/// Writes a big-endian, unsigned n-byte integer as a [`u128`] to the writer.
 	#[inline]
-	fn write_uint128_be(&mut self, n: u128, byte_count: usize) -> IoResult<()> {
+	fn write_uint128_be(&mut self, n: u128, byte_count: usize) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_uint128, 16, n, byte_count)
 	}
 
 	/// Write a [`i8`] to the writer.
 	#[inline]
-	fn write_i8(&mut self, n: i8) -> IoResult<()> {
+	fn write_i8(&mut self, n: i8) -> IoResult<&mut Self> {
 		write_bytes_to!(self, write_i8, 1, n)
 	}
 
 	/// Writes a little-endian [`i16`] to the writer.
 	#[inline]
-	fn write_i16_le(&mut self, n: i16) -> IoResult<()> {
+	fn write_i16_le(&mut self, n: i16) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_i16, 2, n)
 	}
 	/// Writes a big-endian [`i16`] to the writer.
 	#[inline]
-	fn write_i16_be(&mut self, n: i16) -> IoResult<()> {
+	fn write_i16_be(&mut self, n: i16) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_i16, 2, n)
 	}
 
 	/// Writes a little-endian [`i32`] to the writer.
 	#[inline]
-	fn write_i32_le(&mut self, n: i32) -> IoResult<()> {
+	fn write_i32_le(&mut self, n: i32) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_i32, 4, n)
 	}
 	/// Writes a big-endian [`i32`] to the writer.
 	#[inline]
-	fn write_i32_be(&mut self, n: i32) -> IoResult<()> {
+	fn write_i32_be(&mut self, n: i32) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_i32, 4, n)
 	}
 
 	/// Writes a little-endian [`i64`] to the writer.
 	#[inline]
-	fn write_i64_le(&mut self, n: i64) -> IoResult<()> {
+	fn write_i64_le(&mut self, n: i64) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_i64, 8, n)
 	}
 	/// Writes a big-endian [`i64`] to the writer.
 	#[inline]
-	fn write_i64_be(&mut self, n: i64) -> IoResult<()> {
+	fn write_i64_be(&mut self, n: i64) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_i64, 8, n)
 	}
 
 	/// Writes a little-endian [`i128`] to the writer.
 	#[inline]
-	fn write_i128_le(&mut self, n: i128) -> IoResult<()> {
+	fn write_i128_le(&mut self, n: i128) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_i128, 16, n)
 	}
 	/// Writes a big-endian [`i128`] to the writer.
 	#[inline]
-	fn write_i128_be(&mut self, n: i128) -> IoResult<()> {
+	fn write_i128_be(&mut self, n: i128) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_i128, 16, n)
 	}
 
 	/// Writes a little-endian, signed n-byte integer as a [`i64`] to the writer.
 	#[inline]
-	fn write_int64_le(&mut self, n: i64, byte_count: usize) -> IoResult<()> {
+	fn write_int64_le(&mut self, n: i64, byte_count: usize) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_int64, 8, n, byte_count)
 	}
 	/// Writes a big-endian, signed n-byte integer as a [`i64`] to the writer.
 	#[inline]
-	fn write_int64_be(&mut self, n: i64, byte_count: usize) -> IoResult<()> {
+	fn write_int64_be(&mut self, n: i64, byte_count: usize) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_int64, 8, n, byte_count)
 	}
 
 	/// Writes a little-endian, signed n-byte integer as a [`i128`] to the writer.
 	#[inline]
-	fn write_int128_le(&mut self, n: i128, byte_count: usize) -> IoResult<()> {
+	fn write_int128_le(&mut self, n: i128, byte_count: usize) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_int128, 16, n, byte_count)
 	}
 	/// Writes a big-endian, signed n-byte integer as a [`i128`] to the writer.
 	#[inline]
-	fn write_int128_be(&mut self, n: i128, byte_count: usize) -> IoResult<()> {
+	fn write_int128_be(&mut self, n: i128, byte_count: usize) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_int128, 16, n, byte_count)
 	}
 
 	/// Writes a little-endian [`f32`] to the writer.
 	#[inline]
-	fn write_f32_le(&mut self, n: f32) -> IoResult<()> {
+	fn write_f32_le(&mut self, n: f32) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_f32, 4, n)
 	}
 	/// Writes a big-endian [`f32`] to the writer.
 	#[inline]
-	fn write_f32_be(&mut self, n: f32) -> IoResult<()> {
+	fn write_f32_be(&mut self, n: f32) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_f32, 4, n)
 	}
 
 	/// Writes a little-endian [`f64`] to the writer.
 	#[inline]
-	fn write_f64_le(&mut self, n: f64) -> IoResult<()> {
+	fn write_f64_le(&mut self, n: f64) -> IoResult<&mut Self> {
 		write_bytes_to!(self, little::write_f64, 8, n)
 	}
 	/// Writes a big-endian [`f64`] to the writer.
 	#[inline]
-	fn write_f64_be(&mut self, n: f64) -> IoResult<()> {
+	fn write_f64_be(&mut self, n: f64) -> IoResult<&mut Self> {
 		write_bytes_to!(self, big::write_f64, 8, n)
 	}
 }
